@@ -1,5 +1,9 @@
+import { deepCloneChanged } from "./utils/deep-clone-changed";
+
 export class FeatureFlags<Environment extends string, Schema extends FeatureFlagSchema> {
     private subscriptions: Subscription<Schema>[] = [];
+    /** Plain object for React `useSyncExternalStore` (reference updates via `deepCloneChanged` when flags change). */
+    private _storeSnapshot!: TFeatureFlags<Schema>;
     public readonly schema: Schema;
     public readonly initialStore: TFeatureFlags<Schema>;
     private _store: TFeatureFlags<Schema>;
@@ -40,13 +44,39 @@ export class FeatureFlags<Environment extends string, Schema extends FeatureFlag
 
                 if (!valid) return false;
                 const success = Reflect.set(store, flag, value);
-                if (success) this.subscriptions.map((f) => f(flag, value));
+                if (success) {
+                    this.materializeStoreSnapshot();
+                    const subs = this.subscriptions;
+                    for (let i = 0; i < subs.length; i++) {
+                        const cb = subs[i];
+                        if (cb) cb(flag, value);
+                    }
+                }
                 return success;
             },
         });
 
         this.initialStore = { ...this._store };
+        this._storeSnapshot = deepCloneChanged(
+            {} as TFeatureFlags<Schema>,
+            { ...this._store } as TFeatureFlags<Schema>,
+        );
         if (subscription) this.subscriptions.push(subscription);
+    }
+
+    /** Current plain object for `useSyncExternalStore` getSnapshot. */
+    getStoreSnapshot(): TFeatureFlags<Schema> {
+        return this._storeSnapshot;
+    }
+
+    /** Server snapshot: stable initial state (matches `initialStore`). */
+    getInitialStoreSnapshot(): TFeatureFlags<Schema> {
+        return this.initialStore;
+    }
+
+    private materializeStoreSnapshot() {
+        const nextPlain = { ...this._store } as TFeatureFlags<Schema>;
+        this._storeSnapshot = deepCloneChanged(this._storeSnapshot, nextPlain);
     }
 
     subscribe(subscription: Subscription<Schema>) {
@@ -56,8 +86,9 @@ export class FeatureFlags<Environment extends string, Schema extends FeatureFlag
 
     unsubscribe(subscription: Subscription<Schema>) {
         const index = this.subscriptions.indexOf(subscription);
-        if (index) this.subscriptions.splice(index, 1);
-        return !!index;
+        if (index === -1) return false;
+        this.subscriptions.splice(index, 1);
+        return true;
     }
 
     get store() {
@@ -83,20 +114,17 @@ export class FeatureFlags<Environment extends string, Schema extends FeatureFlag
         overrides?: Overrides<Schema>;
     }) {
         const options = FeatureFlags.listOptionsFromSchema(schema);
-
-        return options.reduce(
-            (prev, flag) => ({
-                // biome-ignore lint/performance/noAccumulatingSpread: small, readable reduce over known schema keys
-                ...prev,
-                [flag]: FeatureFlags.computeValue({
+        const out = {} as TFeatureFlags<Schema>;
+        for (const flag of options) {
+            (out as Record<FeatureFlag<Schema>, FeatureFlagValue>)[flag] =
+                FeatureFlags.computeValue({
                     schema,
                     defaults,
                     overrides,
                     flag,
-                }),
-            }),
-            {} as TFeatureFlags<Schema>,
-        );
+                });
+        }
+        return out;
     }
 
     static computeValue<Schema extends FeatureFlagSchema, Flag extends FeatureFlag<Schema>>({
@@ -198,5 +226,5 @@ export type Subscription<Schema extends FeatureFlagSchema> = <T extends FeatureF
     value: FeatureFlagOption<Schema, T>,
 ) => unknown | Promise<unknown>;
 
-// biome-ignore lint/suspicious/noExplicitAny: generic escape hatch for app-specific instances
+// biome-ignore lint/suspicious/noExplicitAny: values must be assignable from any schema-bound FeatureFlags
 export type AnyFeatureFlags = FeatureFlags<any, any>;

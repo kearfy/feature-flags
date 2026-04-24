@@ -1,5 +1,3 @@
-"use client";
-
 import {
     createContext,
     createElement,
@@ -14,6 +12,7 @@ import {
     type FeatureFlagSchema,
     FeatureFlags,
     type Overrides,
+    type Subscription,
     type TFeatureFlags,
 } from "./index";
 
@@ -52,16 +51,19 @@ export function FeatureFlagProvider<Environment extends string, Schema extends F
     const featureFlags =
         options.featureFlags || new FeatureFlags<Environment, Schema>(options.options);
 
-    const jsonState = useSyncExternalStore<string>(
-        (listener) => {
-            featureFlags.subscribe(listener);
-            return () => featureFlags.unsubscribe(listener);
+    const state = useSyncExternalStore(
+        (onStoreChange) => {
+            const sub = ((_f, _v) => {
+                onStoreChange();
+            }) as Subscription<Schema>;
+            featureFlags.subscribe(sub);
+            return () => {
+                featureFlags.unsubscribe(sub);
+            };
         },
-        () => JSON.stringify(featureFlags.store),
-        () => JSON.stringify(featureFlags.initialStore),
-    );
-
-    const state = JSON.parse(jsonState) as TFeatureFlags<typeof featureFlags.schema>;
+        () => featureFlags.getStoreSnapshot(),
+        () => featureFlags.getInitialStoreSnapshot(),
+    ) as TFeatureFlags<typeof featureFlags.schema>;
 
     function setState(updates: Partial<TFeatureFlags<typeof featureFlags.schema>>) {
         const flags = Object.keys(updates) as (keyof typeof updates)[];

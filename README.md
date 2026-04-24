@@ -5,6 +5,10 @@ This package contains abstraction of logic to handle feature flags.
 [![](https://img.shields.io/badge/license-Apache_License_2.0-00bfff.svg?style=flat-square)](https://github.com/kearfy/feature-flags)
 [![](https://img.shields.io/npm/v/@kearfy/feature-flags?style=flat-square)](https://www.npmjs.com/package/@kearfy/feature-flags)
 
+## Runtime and module format
+
+The published package is **ESM only** (see [`package.json` `exports`](./package.json) and the `"type": "module"` field). **Node 20+** is recommended. There is no CommonJS `require` build.
+
 ## Why?
 
 We use this package across multiple projects. We want an abstract and
