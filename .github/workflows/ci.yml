@@ -5,61 +5,29 @@ on:
   - pull_request
 
 jobs:
-  fmt:
-    name: "Formatting"
+  ci:
+    name: Quality, test, build
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          deno-version: v1.x
+          bun-version: latest
 
-      - name: Check formatting
-        run: deno fmt --check
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-  lint:
-    name: "Linting"
-    runs-on: ubuntu-latest
+      - name: Biome
+        run: bun run qc
 
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
+      - name: TypeScript
+        run: bun run qts
 
-      - name: Check linting
-        run: deno lint
-        
-  test:
-    runs-on: ubuntu-latest
+      - name: Test
+        run: bun test
 
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-
-      - name: Run tests
-        run: deno test
-
-  compile:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Compile NPM package
-        run: deno task compile
+      - name: Build
+        run: bun run build

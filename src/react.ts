@@ -1,6 +1,5 @@
 "use client";
 
-// @deno-types="npm:@types/react"
 import {
     createContext,
     createElement,
@@ -8,15 +7,15 @@ import {
     useContext,
     useEffect,
     useSyncExternalStore,
-} from "npm:react";
+} from "react";
 
 import {
     type AnyFeatureFlags,
-    FeatureFlags,
     type FeatureFlagSchema,
+    FeatureFlags,
     type Overrides,
     type TFeatureFlags,
-} from "./mod.ts";
+} from "./index";
 
 type State<T extends AnyFeatureFlags> = [
     TFeatureFlags<T["schema"]>,
@@ -28,29 +27,30 @@ type ContextContent<T extends AnyFeatureFlags> = {
     state: State<T>;
 };
 
-export const FeatureFlagContext = createContext<
-    ContextContent<AnyFeatureFlags>
->({
+export const FeatureFlagContext = createContext<ContextContent<AnyFeatureFlags>>({
     featureFlags: new FeatureFlags({ schema: {} }),
     state: [{}, () => {}],
 });
 
-export function FeatureFlagProvider<
-    Environment extends string,
-    Schema extends FeatureFlagSchema,
->({ children, hydratedOverrides, ...options }: {
-    featureFlags: FeatureFlags<Environment, Schema>;
-    options?: never;
-    hydratedOverrides?: Overrides<Schema>;
-    children: ReactNode;
-} | {
-    featureFlags?: never;
-    options: ConstructorParameters<typeof FeatureFlags<Environment, Schema>>[0];
-    hydratedOverrides?: Overrides<Schema>;
-    children: ReactNode;
-}) {
-    const featureFlags = options.featureFlags ||
-        new FeatureFlags<Environment, Schema>(options.options);
+export function FeatureFlagProvider<Environment extends string, Schema extends FeatureFlagSchema>({
+    children,
+    hydratedOverrides,
+    ...options
+}:
+    | {
+          featureFlags: FeatureFlags<Environment, Schema>;
+          options?: never;
+          hydratedOverrides?: Overrides<Schema>;
+          children: ReactNode;
+      }
+    | {
+          featureFlags?: never;
+          options: ConstructorParameters<typeof FeatureFlags<Environment, Schema>>[0];
+          hydratedOverrides?: Overrides<Schema>;
+          children: ReactNode;
+      }) {
+    const featureFlags =
+        options.featureFlags || new FeatureFlags<Environment, Schema>(options.options);
 
     const jsonState = useSyncExternalStore<string>(
         (listener) => {
@@ -61,13 +61,9 @@ export function FeatureFlagProvider<
         () => JSON.stringify(featureFlags.initialStore),
     );
 
-    const state = JSON.parse(jsonState) as TFeatureFlags<
-        typeof featureFlags["schema"]
-    >;
+    const state = JSON.parse(jsonState) as TFeatureFlags<typeof featureFlags.schema>;
 
-    function setState(
-        updates: Partial<TFeatureFlags<typeof featureFlags["schema"]>>,
-    ) {
+    function setState(updates: Partial<TFeatureFlags<typeof featureFlags.schema>>) {
         const flags = Object.keys(updates) as (keyof typeof updates)[];
         flags.forEach((flag) => {
             const v = updates[flag];
@@ -77,6 +73,7 @@ export function FeatureFlagProvider<
         });
     }
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: one-time application of server-passed overrides on mount
     useEffect(() => {
         if (!hydratedOverrides) return;
         const flags = FeatureFlags.listOptionsFromSchema(featureFlags.schema);
@@ -104,9 +101,7 @@ export function FeatureFlagProvider<
     );
 }
 
-export function featureFlagsHookFactory<T extends AnyFeatureFlags>(
-    _: T,
-) {
+export function featureFlagsHookFactory<T extends AnyFeatureFlags>(_: T) {
     return () => {
         const { state } = useContext(FeatureFlagContext) as ContextContent<T>;
         return state;

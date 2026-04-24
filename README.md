@@ -2,9 +2,8 @@
 
 This package contains abstraction of logic to handle feature flags.
 
-[![](https://img.shields.io/badge/license-Apache_License_2.0-00bfff.svg?style=flat-square)](https://github.com/theopensource-company/feature-flags)
-[![](https://img.shields.io/npm/v/@theopensource-company/feature-flags?style=flat-square)](https://www.npmjs.com/package/@theopensource-company/feature-flags)
-[![](https://img.shields.io/npm/v/@theopensource-company/feature-flags?style=flat-square&label=deno)](https://deno.land/x/featureflags)
+[![](https://img.shields.io/badge/license-Apache_License_2.0-00bfff.svg?style=flat-square)](https://github.com/kearfy/feature-flags)
+[![](https://img.shields.io/npm/v/@kearfy/feature-flags?style=flat-square)](https://www.npmjs.com/package/@kearfy/feature-flags)
 
 ## Why?
 
@@ -15,7 +14,7 @@ provides that for us.
 ## Example
 
 ```typescript
-import { FeatureFlags } from "@theopensource-company/feature-flags";
+import { FeatureFlags } from "@kearfy/feature-flags";
 
 // Create a schema for your feature flags
 const schema = {
@@ -116,8 +115,8 @@ This file contains all configuration for the feature flags
 
 ```ts
 import React, { type ReactNode } from "react";
-import { FeatureFlags } from "@theopensource-company/feature-flags";
-import { featureFlagsHookFactory } from "@theopensource-company/feature-flags/react";
+import { FeatureFlags } from "@kearfy/feature-flags";
+import { featureFlagsHookFactory } from "@kearfy/feature-flags/react";
 
 export const featureFlags = new FeatureFlags({
     schema: {
@@ -139,7 +138,7 @@ applications to wrap all providers in one place.
 ```tsx
 import React from "react";
 import { featureFlags } from "feature-flags.ts";
-import { FeatureFlagProvider } from "@theopensource-company/feature-flags/react";
+import { FeatureFlagProvider } from "@kearfy/feature-flags/react";
 
 export default function Providers(
     { children }: { children: ReactNode },
@@ -192,8 +191,8 @@ library. It might differ for your usecase.
 This file contains all configuration for the feature flags
 
 ```ts
-import { FeatureFlags } from "@theopensource-company/feature-flags";
-import { featureFlagsHookFactory } from "@theopensource-company/feature-flags/vue";
+import { FeatureFlags } from "@kearfy/feature-flags";
+import { featureFlagsHookFactory } from "@kearfy/feature-flags/vue";
 
 export const featureFlags = new FeatureFlags({
     schema: {

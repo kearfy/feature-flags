@@ -1,7 +1,4 @@
-export class FeatureFlags<
-    Environment extends string,
-    Schema extends FeatureFlagSchema,
-> {
+export class FeatureFlags<Environment extends string, Schema extends FeatureFlagSchema> {
     private subscriptions: Subscription<Schema>[] = [];
     public readonly schema: Schema;
     public readonly initialStore: TFeatureFlags<Schema>;
@@ -28,28 +25,25 @@ export class FeatureFlags<
                 ? defaultsInput[environment]
                 : undefined;
         this.schema = schema;
-        this._store = new Proxy(
-            FeatureFlags.computeStore({ schema, defaults, overrides }),
-            {
-                set: (store, flag, value) => {
-                    if (typeof flag !== "string") return false;
+        this._store = new Proxy(FeatureFlags.computeStore({ schema, defaults, overrides }), {
+            set: (store, flag, value) => {
+                if (typeof flag !== "string") return false;
 
-                    const valid = value === FeatureFlags.computeValue({
+                const valid =
+                    value ===
+                    FeatureFlags.computeValue({
                         schema: this.schema,
                         flag,
-                        current: flag in store
-                            ? store[flag as keyof typeof store]
-                            : undefined,
+                        current: flag in store ? store[flag as keyof typeof store] : undefined,
                         manual: value,
                     });
 
-                    if (!valid) return false;
-                    const success = Reflect.set(store, flag, value);
-                    if (success) this.subscriptions.map((f) => f(flag, value));
-                    return success;
-                },
+                if (!valid) return false;
+                const success = Reflect.set(store, flag, value);
+                if (success) this.subscriptions.map((f) => f(flag, value));
+                return success;
             },
-        );
+        });
 
         this.initialStore = { ...this._store };
         if (subscription) this.subscriptions.push(subscription);
@@ -70,16 +64,11 @@ export class FeatureFlags<
         return this._store;
     }
 
-    get<Flag extends FeatureFlag<Schema>>(
-        flag: Flag,
-    ): FeatureFlagOption<Schema, Flag> {
+    get<Flag extends FeatureFlag<Schema>>(flag: Flag): FeatureFlagOption<Schema, Flag> {
         return this._store[flag];
     }
 
-    set<Flag extends FeatureFlag<Schema>>(
-        flag: Flag,
-        value: FeatureFlagOption<Schema, Flag>,
-    ) {
+    set<Flag extends FeatureFlag<Schema>>(flag: Flag, value: FeatureFlagOption<Schema, Flag>) {
         this._store[flag] = value;
         return true;
     }
@@ -95,21 +84,22 @@ export class FeatureFlags<
     }) {
         const options = FeatureFlags.listOptionsFromSchema(schema);
 
-        return options.reduce((prev, flag) => ({
-            ...prev,
-            [flag]: FeatureFlags.computeValue({
-                schema,
-                defaults,
-                overrides,
-                flag,
+        return options.reduce(
+            (prev, flag) => ({
+                // biome-ignore lint/performance/noAccumulatingSpread: small, readable reduce over known schema keys
+                ...prev,
+                [flag]: FeatureFlags.computeValue({
+                    schema,
+                    defaults,
+                    overrides,
+                    flag,
+                }),
             }),
-        }), {} as TFeatureFlags<Schema>);
+            {} as TFeatureFlags<Schema>,
+        );
     }
 
-    static computeValue<
-        Schema extends FeatureFlagSchema,
-        Flag extends FeatureFlag<Schema>,
-    >({
+    static computeValue<Schema extends FeatureFlagSchema, Flag extends FeatureFlag<Schema>>({
         schema,
         flag,
         overrides,
@@ -126,22 +116,17 @@ export class FeatureFlags<
     }): FeatureFlagValue {
         const v = (v: unknown) =>
             schema[flag].options.includes(v as FeatureFlagValue)
-                ? v as FeatureFlagValue
+                ? (v as FeatureFlagValue)
                 : undefined;
         const vSchema = schema[flag].options[0];
         const vDefault = v(defaults?.[flag]);
-        const vOverride = v(
-            FeatureFlags.computeOverride({ schema, flag, overrides }),
-        );
+        const vOverride = v(FeatureFlags.computeOverride({ schema, flag, overrides }));
         const vManual = v(!schema[flag].readonly ? manual : undefined);
 
         return vManual ?? vOverride ?? vDefault ?? vCurrent ?? vSchema;
     }
 
-    static computeOverride<
-        Schema extends FeatureFlagSchema,
-        Flag extends FeatureFlag<Schema>,
-    >({
+    static computeOverride<Schema extends FeatureFlagSchema, Flag extends FeatureFlag<Schema>>({
         schema,
         flag,
         overrides,
@@ -158,9 +143,7 @@ export class FeatureFlags<
         return value;
     }
 
-    static listOptionsFromSchema<Schema extends FeatureFlagSchema>(
-        schema: Schema,
-    ) {
+    static listOptionsFromSchema<Schema extends FeatureFlagSchema>(schema: Schema) {
         return Object.keys(schema) as FeatureFlag<Schema>[];
     }
 
@@ -168,10 +151,7 @@ export class FeatureFlags<
         return ["string", "number", "boolean"].includes(typeof v);
     }
 
-    static createOptions<
-        Environment extends string,
-        Schema extends FeatureFlagSchema,
-    >({
+    static createOptions<Environment extends string, Schema extends FeatureFlagSchema>({
         schema,
         defaults,
     }: {
@@ -202,12 +182,7 @@ export type TFeatureFlags<Schema extends FeatureFlagSchema> = {
 export type FeatureFlagDefaults<
     Environment extends string,
     Schema extends FeatureFlagSchema,
-> = Partial<
-    Record<
-        Environment,
-        Partial<TFeatureFlags<Schema>>
-    >
->;
+> = Partial<Record<Environment, Partial<TFeatureFlags<Schema>>>>;
 
 export type FeatureFlag<T extends FeatureFlagSchema> = keyof T;
 export type FeatureFlagOption<
@@ -215,14 +190,13 @@ export type FeatureFlagOption<
     Flag extends FeatureFlag<Schema>,
 > = Schema[Flag]["options"][number];
 
-export type Overrides<Schema extends FeatureFlagSchema> = <
-    T extends FeatureFlag<Schema>,
->(
+export type Overrides<Schema extends FeatureFlagSchema> = <T extends FeatureFlag<Schema>>(
     flag: T,
-) => FeatureFlagValue | void;
-export type Subscription<Schema extends FeatureFlagSchema> = <
-    T extends FeatureFlag<Schema>,
->(flag: T, value: FeatureFlagOption<Schema, T>) => unknown | Promise<unknown>;
+) => FeatureFlagValue | undefined;
+export type Subscription<Schema extends FeatureFlagSchema> = <T extends FeatureFlag<Schema>>(
+    flag: T,
+    value: FeatureFlagOption<Schema, T>,
+) => unknown | Promise<unknown>;
 
-// deno-lint-ignore no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: generic escape hatch for app-specific instances
 export type AnyFeatureFlags = FeatureFlags<any, any>;

@@ -1,8 +1,5 @@
-import {
-    assertEquals,
-    assertThrows,
-} from "https://deno.land/std@0.201.0/assert/mod.ts";
-import { FeatureFlags } from "./mod.ts";
+import { expect, test } from "bun:test";
+import { FeatureFlags } from "../src/index";
 
 const schema = {
     devTools: {
@@ -31,16 +28,16 @@ const options = FeatureFlags.createOptions({
     },
 });
 
-Deno.test("test defaults", () => {
+test("test defaults", () => {
     console.info("For prod");
     const prod = new FeatureFlags({
         ...options,
         environment: "prod",
     });
 
-    assertEquals(prod.store.max, 2);
-    assertEquals(prod.store.migrateDatabase, false);
-    assertEquals(prod.store.devTools, false);
+    expect(prod.store.max).toBe(2);
+    expect(prod.store.migrateDatabase).toBe(false);
+    expect(prod.store.devTools).toBe(false);
 
     console.info("For dev");
     const dev = new FeatureFlags({
@@ -48,9 +45,9 @@ Deno.test("test defaults", () => {
         environment: "dev",
     });
 
-    assertEquals(dev.store.max, 4);
-    assertEquals(dev.store.migrateDatabase, true);
-    assertEquals(dev.store.devTools, true);
+    expect(dev.store.max).toBe(4);
+    expect(dev.store.migrateDatabase).toBe(true);
+    expect(dev.store.devTools).toBe(true);
 
     console.info("For preview");
     const preview = new FeatureFlags({
@@ -58,12 +55,12 @@ Deno.test("test defaults", () => {
         environment: "preview",
     });
 
-    assertEquals(preview.store.max, 2);
-    assertEquals(preview.store.migrateDatabase, false);
-    assertEquals(preview.store.devTools, true);
+    expect(preview.store.max).toBe(2);
+    expect(preview.store.migrateDatabase).toBe(false);
+    expect(preview.store.devTools).toBe(true);
 });
 
-Deno.test("Test updating", () => {
+test("Test updating", () => {
     const prod = new FeatureFlags({
         ...options,
         environment: "prod",
@@ -71,39 +68,44 @@ Deno.test("Test updating", () => {
 
     console.log("Enabling devTools");
     prod.store.devTools = true;
-    assertEquals(prod.store.devTools, true);
+    expect(prod.store.devTools).toBe(true);
 
     console.log("Cannot change migrateDatabase");
-    assertThrows(
-        () => {
-            prod.store.migrateDatabase = true;
-        },
-        TypeError,
-        "'set' on proxy: trap returned falsish for property 'migrateDatabase'",
-    );
-    assertEquals(prod.store.migrateDatabase, false);
+    let assignError: unknown;
+    try {
+        prod.store.migrateDatabase = true;
+    } catch (e) {
+        assignError = e;
+    }
+    expect(assignError).toBeInstanceOf(TypeError);
+    expect((assignError as TypeError).message).toContain("migrateDatabase");
+    expect(prod.store.migrateDatabase).toBe(false);
 });
 
-Deno.test("Test overrides", () => {
+test("Test overrides", () => {
     const prod = new FeatureFlags({
         ...options,
         environment: "prod",
-        overrides: (flag) => (({
-            max: 4,
-            migrateDatabase: true,
-            devTools: true,
-        } as const)[flag]),
+        overrides: (flag) =>
+            (
+                ({
+                    max: 4,
+                    migrateDatabase: true,
+                    devTools: true,
+                }) as const
+            )[flag],
     });
 
-    assertEquals(prod.store.max, 4);
-    assertEquals(prod.store.migrateDatabase, false);
-    assertEquals(prod.store.devTools, true);
+    expect(prod.store.max).toBe(4);
+    expect(prod.store.migrateDatabase).toBe(false);
+    expect(prod.store.devTools).toBe(true);
 });
 
-Deno.test("Test subscriptions", () => {
+test("Test subscriptions", () => {
     const updates: [unknown, unknown][][] = [[], []];
-    const validate = (state: [unknown, unknown][]) =>
-        assertEquals(updates, [state, state]);
+    const validate = (state: [unknown, unknown][]) => {
+        expect(updates).toEqual([state, state]);
+    };
 
     const prod = new FeatureFlags({
         ...options,
@@ -114,9 +116,7 @@ Deno.test("Test subscriptions", () => {
     prod.subscribe((...args) => updates[1].push(args));
 
     prod.store.max = 4;
-    validate([
-        ["max", 4],
-    ]);
+    validate([["max", 4]]);
 
     prod.store.devTools = true;
     validate([

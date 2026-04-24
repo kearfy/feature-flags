@@ -1,0 +1,69 @@
+{
+    "name": "@kearfy/feature-flags",
+    "version": "0.5.0",
+    "description": "Abstraction of logic to handle feature flags",
+    "license": "Apache-2.0",
+    "type": "module",
+    "sideEffects": false,
+    "packageManager": "^bun@1.2.21",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./react": {
+            "types": "./dist/react.d.ts",
+            "import": "./dist/react.js"
+        },
+        "./vue": {
+            "types": "./dist/vue.d.ts",
+            "import": "./dist/vue.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "tsup && node scripts/patch-react-use-client.mjs",
+        "prepublishOnly": "bun run build",
+        "test": "bun test tests",
+        "qc": "biome check .",
+        "qa": "biome check . --write",
+        "qau": "biome check . --write --unsafe",
+        "qts": "tsc --noEmit",
+        "qtsw": "tsc --noEmit --watch"
+    },
+    "peerDependencies": {
+        "react": "^19.0.0",
+        "vue": "^3.5.0"
+    },
+    "peerDependenciesMeta": {
+        "react": {
+            "optional": true
+        },
+        "vue": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.1.2",
+        "@types/react": "^19.0.0",
+        "bun-types": "^1.2.21",
+        "react": "^19.0.0",
+        "tsup": "^8.3.0",
+        "typescript": "^5.7.0",
+        "vue": "^3.5.13"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kearfy/feature-flags.git"
+    },
+    "bugs": {
+        "url": "https://github.com/kearfy/feature-flags/issues"
+    }
+}

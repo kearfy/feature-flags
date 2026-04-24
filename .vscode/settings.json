@@ -1,5 +1,7 @@
 {
-    "deno.enable": true,
-    "deno.lint": true,
-    "deno.unstable": true
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports.biome": "explicit"
+    }
 }

@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "lib": ["ESNext"],
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "types": ["bun-types"],
+        "strict": true,
+        "skipLibCheck": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true,
+        "noEmit": true,
+        "jsx": "react-jsx"
+    },
+    "include": ["src/**/*.ts", "tests/**/*.ts", "tsup.config.ts", "scripts/**/*.mjs"],
+    "exclude": ["node_modules", "dist"]
+}
